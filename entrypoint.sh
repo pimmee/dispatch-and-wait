@@ -1,27 +1,29 @@
 function trigger_workflow {
   echo "Triggering ${INPUT_EVENT_TYPE} in ${INPUT_OWNER}/${INPUT_REPO}"
 
-  workflow_expect_runid=$(curl -s "https://api.github.com/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/runs?event=repository_dispatch" \
+  expected_workflow_run_number=$(curl -s "https://api.github.com/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/runs?event=repository_dispatch" \
         -H "Accept: application/vnd.github.v3+json" \
-        -H "Authorization: Bearer ${INPUT_TOKEN}" | jq '.workflow_runs[0].run_number')
+        -H "Authorization: Bearer ${INPUT_TOKEN}" \
+        | jq ".workflow_runs | map(select(.name == \"$INPUT_WORKFLOW_NAME\")) | first | .run_number")
 
-  if [ "$workflow_expect_runid" = "null" ]; then
-    workflow_expect_runid=0
+
+  if [ "$workflow_expect_run_number" = "null" ]; then
+    expected_workflow_run_number=0
   fi
-  workflow_expect_runid=$(( $workflow_expect_runid + 1))
+  expected_workflow_run_number=$(( $expected_workflow_run_number + 1))
 
-  resp=$(curl -X POST -s "https://api.github.com/repos/${INPUT_OWNER}/${INPUT_REPO}/dispatches" \
+  workflow_trigger_response=$(curl -X POST -s "https://api.github.com/repos/${INPUT_OWNER}/${INPUT_REPO}/dispatches" \
     -H "Accept: application/vnd.github.v3+json" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${INPUT_TOKEN}" \
     -d "{\"event_type\": \"${INPUT_EVENT_TYPE}\", \"client_payload\": ${INPUT_CLIENT_PAYLOAD} }")
 
-  if [ -z "$resp" ]
+  if [ -z "$workflow_trigger_response" ]
   then
     sleep 2
   else
     echo "Workflow failed to trigger"
-    echo "$resp"
+    echo "$workflow_trigger_response"
     exit 1
   fi
 }
@@ -33,7 +35,9 @@ function ensure_workflow {
   do
     workflow_runid=$(curl -s "https://api.github.com/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/runs?event=repository_dispatch" \
       -H "Accept: application/vnd.github.v3+json" \
-      -H "Authorization: Bearer ${INPUT_TOKEN}" | jq ".workflow_runs[] | select(.run_number==$workflow_expect_runid) | .id")
+      -H "Authorization: Bearer ${INPUT_TOKEN}" \
+      | jq ".workflow_runs | map(select(.name == \"$INPUT_WORKFLOW_NAME\" and .run_number==$expected_workflow_run_number)) | first | .id")
+
 
     [ -z "$workflow_runid" ] || break
     sleep 2

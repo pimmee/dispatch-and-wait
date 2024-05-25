@@ -1,30 +1,33 @@
-name: 'Dispatch and wait on workflow'
-description: 'Trigger a workflow and then wait for it to succeed before proceeding'
+name: "Dispatch and wait on workflow"
+description: "Trigger a workflow and then wait for it to succeed before proceeding"
 inputs:
   owner:
-    description: 'Owner of the GitHub repo'
+    description: "Owner of the GitHub repo"
     required: true
   repo:
-    description: 'Name of the GitHub repo'
+    description: "Name of the GitHub repo"
     required: true
   token:
-    description: 'Access token for the repo'
+    description: "Access token for the repo"
     required: true
   event_type:
-    description: 'The event type of the repository dispatch'
+    description: "The event type of the repository dispatch"
+    required: true
+  workflow_name:
+    description: "Name of the remote workflow being triggered"
     required: true
   client_payload:
-    description: 'Payload for the repository dispatch event'
+    description: "Payload for the repository dispatch event"
     default: "{}"
     required: false
   wait_time:
-    description: 'How long to wait between polls'
+    description: "How long to wait between polls"
     default: "10"
     required: false
   max_time:
-    description: 'Maximum amount of time to wait for workflow'
+    description: "Maximum amount of time to wait for workflow"
     default: "60"
     required: false
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: "docker"
+  image: "Dockerfile"
