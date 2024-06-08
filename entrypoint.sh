@@ -38,12 +38,15 @@ function ensure_workflow {
       -H "Authorization: Bearer ${INPUT_TOKEN}" \
       | jq ".workflow_runs | map(select(.name == \"$INPUT_WORKFLOW_NAME\" and .run_number==$expected_workflow_run_number)) | first | .id")
 
-
-    [ -z "$workflow_runid" ] || break
+      # Check if the workflow_runid is valid (non empty string and not null)
+      if [ -n "$workflow_runid" ] && [ "$workflow_runid" != "null" ]; then
+        break
+      fi
     sleep 2
   done
 
-  if [ -z "$workflow_runid" ]; then
+  # Exit if workflow_runid is empty string or null
+  if [ -z "$workflow_runid" ] || [ "$workflow_runid" == "null" ]; then
     >&2 echo "No workflow run id found. Repository dispatch failed!"
     exit 1
   fi
